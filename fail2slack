@@ -1,0 +1,19 @@
+#! /bin/bash
+
+# CONFIG
+SENDTO="@username"
+URL="https://hooks.slack.com/services/XXXXXXXXX/YYYYYYYYY/ZZZZZZZZZZZZZZZZZZZZZZZZ"
+USERNAME="fail2slack"
+LOGPATH="/var/log/fail2ban.log"
+DATE=$(date +"%Y-%m-%d")
+
+# MESSAGES
+HOST=$(hostname -f)
+GREETING="SSH Bans for $HOST on $DATE"
+
+# GATHER BANS
+FAILS=$(grep -Pr "$DATE.*Ban" $LOGPATH | sed "s/.* \(.*\),.*Ban \(.*\)/\1 <http:\/\/network-tools.com\/default.asp?prog=network\&host=\2|\2>/")
+
+# SEND 'EM
+PAYLOAD="{\"channel\": \"$SENDTO\", \"username\": \"$USERNAME\", \"text\": \"*$GREETING*\n$FAILS\"}"
+curl -X POST -H 'Content-type: application/json' --data "$PAYLOAD" $URL > /dev/null 2>&1
