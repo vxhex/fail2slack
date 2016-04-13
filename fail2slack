@@ -3,17 +3,25 @@
 # CONFIG
 SENDTO="@username"
 URL="https://hooks.slack.com/services/XXXXXXXXX/YYYYYYYYY/ZZZZZZZZZZZZZZZZZZZZZZZZ"
-USERNAME="fail2slack"
+BOTNAME="fail2slack"
 LOGPATH="/var/log/fail2ban.log"
 DATE=$(date +"%Y-%m-%d")
 
-# MESSAGES
-HOST=$(hostname -f)
-GREETING="SSH Bans for $HOST on $DATE"
-
 # GATHER BANS
-FAILS=$(grep -Pr "$DATE.*Ban" $LOGPATH | sed "s/.* \(.*\),.*Ban \(.*\)/\1 <http:\/\/network-tools.com\/default.asp?prog=network\&host=\2|\2>/")
+FAILS=$(grep -Pr "$DATE.*Ban" $LOGPATH | sed "s/.* \(.*\),.*Ban \(.*\)/\1 \2/")
+
+# BUILD REPORT
+HOST=$(hostname -f)
+GREETING="*SSH Bans for $HOST on $DATE*"
+MESSAGE=$GREETING
+while read -r line; do
+    ipaddress=$(echo $line | sed 's/.* \(.*\)/\1/')
+    time=$(echo $line | sed 's/\(.*\) .*/\1/')
+    country=$(curl ipinfo.io/$ipaddress -s | grep country | sed 's/.*: "\(.*\)",/\1/')
+    ban="$time - <https://whois.domaintools.com/$ipaddress|$ipaddress> - $country"
+    MESSAGE="$MESSAGE\n$ban"
+done <<< "$FAILS"
 
 # SEND 'EM
-PAYLOAD="{\"channel\": \"$SENDTO\", \"username\": \"$USERNAME\", \"text\": \"*$GREETING*\n$FAILS\"}"
+PAYLOAD="{\"channel\": \"$SENDTO\", \"username\": \"$BOTNAME\", \"text\": \"$MESSAGE\"}"
 curl -X POST -H 'Content-type: application/json' --data "$PAYLOAD" $URL > /dev/null 2>&1
