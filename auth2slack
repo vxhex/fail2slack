@@ -8,7 +8,7 @@ LOGPATH="/var/log/auth.log"
 DATE=$(date +"%b %e")
 
 # GATHER AUTHS
-AUTHS=$(grep -P "$DATE.*Accepted password for" /var/log/auth.log | sed "s/.* \(..:..:..\) .* password for \(.*\) from \(.*\) port .*/\1 \2 \3/")
+AUTHS=$(grep -P "$DATE.*Accepted " /var/log/auth.log | sed "s/.* \(..:..:..\) .* for \(.*\) from \(.*\) port .*/\1 \2 \3/")
 
 # BUILD REPORT
 HOST=$(hostname -f)
