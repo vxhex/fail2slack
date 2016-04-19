@@ -8,7 +8,7 @@ LOGPATH="/var/log/fail2ban.log"
 DATE=$(date +"%Y-%m-%d")
 
 # GATHER BANS
-FAILS=$(grep -Pr "$DATE.*Ban" $LOGPATH | sed "s/.* \(.*\),.*Ban \(.*\)/\1 \2/")
+FAILS=$(grep -P "$DATE.*Ban" $LOGPATH | sed "s/.* \(.*\),.*Ban \(.*\)/\1 \2/")
 
 # BUILD REPORT
 HOST=$(hostname -f)

@@ -1,0 +1,28 @@
+#! /bin/bash
+
+# CONFIG
+SENDTO="@username"
+URL="https://hooks.slack.com/services/XXXXXXXXX/YYYYYYYYY/ZZZZZZZZZZZZZZZZZZZZZZZZ"
+BOTNAME="auth2slack"
+LOGPATH="/var/log/auth.log"
+DATE=$(date +"%b %e")
+
+# GATHER AUTHS
+AUTHS=$(grep -P "$DATE.*Accepted password for" /var/log/auth.log | sed "s/.* \(..:..:..\) .* password for \(.*\) from \(.*\) port .*/\1 \2 \3/")
+
+# BUILD REPORT
+HOST=$(hostname -f)
+GREETING="*SSH Auths for $HOST on $DATE*"
+MESSAGE=$GREETING
+while read -r line; do
+    ipaddress=$(echo $line | sed 's/.* .* \(.*\)/\1/')
+    username=$(echo $line | sed 's/.* \(.*\) .*/\1/')
+    time=$(echo $line | sed 's/\(.*\) .* .*/\1/')
+    country=$(curl ipinfo.io/$ipaddress -s | grep country | sed 's/.*: "\(.*\)",/\1/')
+    auth="$time - $username - <https://whois.domaintools.com/$ipaddress|$ipaddress> - $country"
+    MESSAGE="$MESSAGE\n$auth"
+done <<< "$AUTHS"
+
+# SEND 'EM
+PAYLOAD="{\"channel\": \"$SENDTO\", \"username\": \"$BOTNAME\", \"text\": \"$MESSAGE\"}"
+curl -X POST -H 'Content-type: application/json' --data "$PAYLOAD" $URL > /dev/null 2>&1
